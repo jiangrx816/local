@@ -1,0 +1,125 @@
+version: '3.8'  # 这是一个Docker Compose文件的版本声明，表明该文件符合Docker Compose文件格式版本3.8
+
+services:
+  local-nginx:        # 服务名称，可以自定义
+    image: nginx:1.21.6  # 镜像名，一般都是使用的哪个镜像就写哪个镜像
+    container_name: local-nginx  # 容器名称，可以自定义
+    ports:
+      - "80:80"  # 端口，冒号：左边的80可以改成任意本机上未使用的端口，冒号右边的是本Docker镜像里的端口
+      - "443:443"
+    environment:
+      - TZ=Asia/Shanghai  # 环境变量，可以设置多个
+    restart: always  # 开启自动重启的设置
+    privileged: true  # 容器对宿主机的所有设备的访问权限
+    volumes:
+      - ./services/nginx/nginx.conf:/etc/nginx/nginx.conf  # 目录映射，冒号左侧可以更改为本地的目录，冒号右侧的是对应的容器的目录
+    networks:
+      - local-network  # 设置对应的网络名称
+
+  local-redis:
+    image: redis:6.2.5
+    container_name: local-redis
+    ports:
+      - "6379:6379"
+    environment:
+      - TZ=Asia/Shanghai
+    restart: always
+    privileged: true
+    volumes:
+      - ./services/redis/redis.conf:/etc/redis/redis.conf
+      - ./data/redis:/data
+    entrypoint: ["redis-server", "/etc/redis/redis.conf"]
+    networks:
+      - local-network
+
+  local-mysql:
+    image: mysql:5.7.28
+    container_name: local-mysql
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=123456
+      - TZ=Asia/Shanghai
+    restart: always
+    privileged: true
+    volumes:
+      - ./services/mysql/mysql.cnf:/etc/mysql/conf.d/mysql.cnf
+      - ./data/mysql:/var/lib/mysql
+    networks:
+      - local-network
+  
+  local-mongo:
+    image: mongo:4.0
+    container_name: local-mongo
+    restart: always
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=jiang
+      - MONGO_INITDB_ROOT_PASSWORD=tvKLG7UpegqKNsB3
+      - MONGO_INITDB_DATABASE=admin
+      - TZ=Asia/Shanghai
+    volumes:
+      - ./data/mongo:/data/db
+    ports:
+      - "27017:27017"
+    networks:
+      - local-network
+
+  local-rabbitmq:
+    image: rabbitmq:management
+    container_name: local-rabbitmq
+    restart: always
+    environment:
+      - RABBITMQ_DEFAULT_USER=jiang
+      - RABBITMQ_DEFAULT_PASS=jiang816
+      - TZ=Asia/Shanghai
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - local-network
+  
+  local-elasticsearch:
+    image: elasticsearch:7.17.20
+    container_name: local-elasticsearch
+    ports:
+      - "9200:9200"
+    environment:
+      - TZ=Asia/Shanghai
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    restart: always
+    privileged: true
+    volumes:
+      - ./services/elasticsearch/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
+      - ./data/elasticsearch:/usr/share/elasticsearch/data
+    networks:
+      - local-network
+
+  local-kafka:
+    image: wurstmeister/kafka:latest
+    container_name: local-kafka
+    restart: always
+    environment:
+      - KAFKA_LISTENERS=PLAINTEXT://0.0.0.0:9092
+      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://local-kafka:9092
+      - KAFKA_ZOOKEEPER_CONNECT=local-zookeeper:2181
+      - TZ=Asia/Shanghai
+    ports:
+      - "9092:9092"
+    networks:
+      - local-network
+
+  local-zookeeper:
+    image: wurstmeister/zookeeper:latest
+    container_name: local-zookeeper
+    restart: always
+    environment:
+      - TZ=Asia/Shanghai
+    ports:
+      - "2181:2181"
+    networks:
+      - local-network
+
+networks:
+  local-network:  # 定义网络名称，可以自定义
+    driver: bridge  # 使用 bridge 网络驱动程序
