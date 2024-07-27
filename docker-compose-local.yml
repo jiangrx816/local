@@ -88,6 +88,7 @@ services:
       - "9200:9200"
       - "9300:9300"
     restart: always
+    privileged: true
     networks:
       - local-network
 
@@ -102,11 +103,13 @@ services:
       - LOGSTASH_JAVA_OPTS=-Xms256m -Xmx256m
     ports:
       - "5044:5044"
-    networks:
-      - local-network
     depends_on:
       - local-elasticsearch
     restart: always
+    privileged: true
+    networks:
+      - local-network
+
   local-kafka:
     image: wurstmeister/kafka:latest
     container_name: local-kafka

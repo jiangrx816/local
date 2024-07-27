@@ -1,5 +1,5 @@
 path.config: /usr/share/logstash/conf.d/*.conf
 path.logs: /var/log/logstash
 http.host: "0.0.0.0"
-xpack.monitoring.elasticsearch.hosts: [ "http://172.19.0.6:9200" ]
+xpack.monitoring.elasticsearch.hosts: [ "http://172.27.0.4:9200" ]
 xpack.monitoring.enabled: true
