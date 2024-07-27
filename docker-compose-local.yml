@@ -95,6 +95,22 @@ services:
     networks:
       - local-network
 
+  local-logstash:
+    image: logstash:7.17.20
+    container_name: local-logstash
+    ports:
+      - "9200:9200"
+    environment:
+      - TZ=Asia/Shanghai
+    restart: always
+    privileged: true
+    volumes:
+      - ./services/logstash/logstash.yml:/usr/share/logstash/config/logstash.yml
+      - ./services/logstash/conf.d/:/usr/share/logstash/conf.d/
+      - ./services/logstash/mysql-connector-j-8.0.31.jar:/usr/share/logstash/logstash-core/lib/jars/mysql-connector-j-8.0.31.jar
+    networks:
+      - local-network
+
   local-kafka:
     image: wurstmeister/kafka:latest
     container_name: local-kafka
