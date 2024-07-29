@@ -16,6 +16,7 @@ services:
       - ./services/nginx/logs:/var/log/nginx
       - ./services/nginx/html:/usr/share/nginx/html
       - ./services/nginx/conf:/etc/nginx/conf.d
+      - ./services/nginx/ssl:/etc/nginx/ssl
     networks:
       - local-network  # 设置对应的网络名称
 
