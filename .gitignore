@@ -6,3 +6,4 @@ services/nginx/conf/
 !services/nginx/conf/default.conf
 www/
 !www/localhost
+services/nginx/ssl/
