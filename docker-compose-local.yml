@@ -24,20 +24,6 @@ services:
     networks:
       - local-network  # 设置对应的网络名称
 
-  local-php:
-    image: php:7.4.33-fpm
-    container_name: local-php
-    restart: always
-    environment:
-      - TZ=Asia/Shanghai
-    volumes:
-      - ./www/:/www/:rw
-      - ./services/php/php.ini:/usr/local/etc/php/php.ini
-      - ./services/php/www.conf:/usr/local/etc/php-fpm.d/www.conf
-      - ./logs/php:/var/log/php
-    networks:
-      - local-network
-
   local-redis:
     image: redis:6.2.5
     container_name: local-redis
@@ -70,6 +56,37 @@ services:
       - ./logs/mysql:/var/log/mysql/:rw
     networks:
       - local-network
+
+  local-php:
+    image: php:7.4.33-fpm
+    container_name: local-php
+    restart: always
+    environment:
+      - TZ=Asia/Shanghai
+    volumes:
+      - ./www/:/www/:rw
+      - ./services/php/php.ini:/usr/local/etc/php/php.ini
+      - ./services/php/www.conf:/usr/local/etc/php-fpm.d/www.conf
+      - ./logs/php:/var/log/php
+    networks:
+      - local-network
+
+#  local-mysql8:
+#    image: mysql:8.0.34
+#    container_name: local-mysql8
+#    ports:
+#      - "3305:3306"
+#    environment:
+#      - MYSQL_ROOT_PASSWORD=123456
+#      - TZ=Asia/Shanghai
+#    restart: always
+#    privileged: true
+#    volumes:
+#      - ./services/mysql8/mysql.cnf:/etc/mysql/conf.d/mysql.cnf
+#      - ./data/mysql8:/var/lib/mysql
+#      - ./logs/mysql8:/var/log/mysql/:rw
+#    networks:
+#      - local-network
 
   local-mongo:
     image: mongo:4.0
@@ -124,6 +141,7 @@ services:
       - ./services/logstash/mysql-connector-j-8.0.31.jar:/usr/share/logstash/logstash-core/lib/jars/mysql-connector-j-8.0.31.jar
     environment:
       - LOGSTASH_JAVA_OPTS=-Xms256m -Xmx256m
+      - TZ=Asia/Shanghai
     ports:
       - "5044:5044"
     depends_on:
