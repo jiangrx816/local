@@ -1,7 +1,4 @@
-services/nginx/logs
 .idea/
 .DS_Store
-data/elasticsearch
-data/mongo
-data/mysql
-data/redis
+data/
+logs/
