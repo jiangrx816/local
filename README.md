@@ -12,7 +12,7 @@ docker-compose -f docker-compose-local.yml up -d
 ## 查询ip
 ```shell
 # docker inspect 容器名称
-docker inspect mysql
-docker inspect elasticsearch
+docker inspect local-mysql
+docker inspect local-elasticsearch
 
  ```

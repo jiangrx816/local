@@ -139,20 +139,6 @@ services:
     networks:
       - local-network
 
-  local-web:
-    image: github.com/jiangrx816/web
-    container_name: local-web
-    ports:
-      - "8082:8082"
-    environment:
-      - TZ=Asia/Shanghai
-    restart: always
-    privileged: true
-    volumes:
-      - ./services/web/app.yml:/app/config/app.yml
-    networks:
-      - local-network
-
 networks:
   local-network:  # 定义网络名称，可以自定义
     driver: bridge  # 使用 bridge 网络驱动程序
