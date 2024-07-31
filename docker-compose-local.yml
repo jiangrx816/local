@@ -12,13 +12,31 @@ services:
     restart: always  # 开启自动重启的设置
     privileged: true  # 容器对宿主机的所有设备的访问权限
     volumes:
-      - ./services/nginx/nginx.conf:/etc/nginx/nginx.conf  # 目录映射，冒号左侧可以更改为本地的目录，冒号右侧的是对应的容器的目录
-      - ./services/nginx/logs:/var/log/nginx
-      - ./services/nginx/html:/usr/share/nginx/html
+      - ./www/:/www/:rw # 目录映射，冒号左侧可以更改为本地的目录，冒号右侧的是对应的容器的目录
+      - ./services/nginx/nginx.conf:/etc/nginx/nginx.conf
       - ./services/nginx/conf:/etc/nginx/conf.d
       - ./services/nginx/ssl:/etc/nginx/ssl
+      - ./services/nginx/fastcgi-php.conf:/etc/nginx/fastcgi-php.conf:ro
+      - ./services/nginx/fastcgi_params:/etc/nginx/fastcgi_params:ro
+      - ./logs/nginx:/var/log/nginx
+    depends_on:
+      - local-php
     networks:
       - local-network  # 设置对应的网络名称
+
+  local-php:
+    image: php:7.4.33-fpm
+    container_name: local-php
+    restart: always
+    environment:
+      - TZ=Asia/Shanghai
+    volumes:
+      - ./www/:/www/:rw
+      - ./services/php/php.ini:/usr/local/etc/php/php.ini
+      - ./services/php/www.conf:/usr/local/etc/php-fpm.d/www.conf
+      - ./logs/php:/var/log/php
+    networks:
+      - local-network
 
   local-redis:
     image: redis:6.2.5
@@ -49,6 +67,7 @@ services:
     volumes:
       - ./services/mysql/mysql.cnf:/etc/mysql/conf.d/mysql.cnf
       - ./data/mysql:/var/lib/mysql
+      - ./logs/mysql:/var/log/mysql/:rw
     networks:
       - local-network
 
