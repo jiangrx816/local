@@ -2,3 +2,5 @@
 .DS_Store
 data/
 logs/
+services/nginx/conf/
+!services/nginx/conf/default.conf
