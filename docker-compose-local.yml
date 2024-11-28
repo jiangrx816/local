@@ -176,6 +176,23 @@ services:
     networks:
       - local-network
 
+  local-postgres:
+    image: postgres:14  # 使用最新版本的PostgreSQL镜像
+    container_name: local-postgres
+    ports:
+      - "5432:5432"  # 将宿主机的5432端口映射到容器的5432端口
+    environment:
+      - POSTGRES_DB=pg_jiang  # 初始化数据库名
+      - POSTGRES_USER=root  # 初始化用户名
+      - POSTGRES_PASSWORD=jiang816  # 初始化用户密码
+      - TZ=Asia/Shanghai  # 设置时区
+    restart: always  # 开启自动重启
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data  # 数据持久化
+      - ./logs/postgres:/var/log/postgresql  # 日志目录
+    networks:
+      - local-network  # 使用已定义的网络
+
 networks:
   local-network:  # 定义网络名称，可以自定义
     driver: bridge  # 使用 bridge 网络驱动程序
