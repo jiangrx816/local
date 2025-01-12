@@ -49,8 +49,10 @@ DNMP（Docker + Nginx + MySQL5,8 + PHP7,8 + Redis + ElasticSearch + MongoDB + Ra
 │   ├── php                     PHP7配置目录
 │   └── redis                   Redis 配置目录
 ├── logs                        日志目录
-├── docker-compose-local.yml   Docker 服务配置示例文件
+├── docker-compose.yml   Docker 服务配置示例文件
 └── www                         PHP项目代码目录
+│   ├── site1                   站点1文件目录
+│   ├── site2                   站点2文件目录
 ```
 
 ## 2.快速使用
@@ -64,7 +66,7 @@ DNMP（Docker + Nginx + MySQL5,8 + PHP7,8 + Redis + ElasticSearch + MongoDB + Ra
     ```
 3. 创建对应的local环境：
    ```
-   $ docker-compose -f docker-compose-local.yml up -d
+   $ docker-compose -f docker-compose.yml up -d
     ```
 
 ## 3.常用命令（php-cli）
