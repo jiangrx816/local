@@ -1,2 +1,3 @@
 <?php
-    echo "welcome to site2";
+
+echo "this is site2";

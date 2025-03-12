@@ -1,198 +1,173 @@
-version: '3.8'  # 这是一个Docker Compose文件的版本声明，表明该文件符合Docker Compose文件格式版本3.8
-
+version: "3"
 services:
-  local-nginx:        # 服务名称，可以自定义
-    image: nginx:1.19  # 镜像名，一般都是使用的哪个镜像就写哪个镜像
-    container_name: local-nginx  # 容器名称，可以自定义
+  nginx:
+    build:
+      context: ./services/nginx
+    container_name: nginx
     ports:
-      - "80:80"  # 端口，冒号：左边的80可以改成任意本机上未使用的端口，冒号右边的是本Docker镜像里的端口
+      - "80:80"
       - "443:443"
-    environment:
-      - TZ=Asia/Shanghai  # 环境变量，可以设置多个
-    restart: always  # 开启自动重启的设置
-    privileged: true  # 容器对宿主机的所有设备的访问权限
     volumes:
-      - ./www:/var/www/html:rw # 目录映射，冒号左侧可以更改为本地的目录，冒号右侧的是对应的容器的目录
-      - ./services/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./services/nginx/hosts:/etc/nginx/conf.d:ro
-      - ./services/nginx/ssl:/etc/nginx/ssl
-      - ./services/nginx/fastcgi-php.conf:/etc/nginx/fastcgi-php.conf:ro
-      - ./services/nginx/fastcgi_params:/etc/nginx/fastcgi_params:ro
-      - ./logs/nginx:/var/log/nginx
-    depends_on:
-      - local-php
+      - ${SOURCE_DIR}:/www/:rw
+      - ${NGINX_SSL_CERTIFICATE_DIR}:/ssl
+      - ${NGINX_CONFD_DIR}:/etc/nginx/conf.d
+      - ${NGINX_CONF_FILE}:/etc/nginx/nginx.conf
+      - ${NGINX_FASTCGI_PHP_CONF}:/etc/nginx/fastcgi-php.conf
+      - ${NGINX_FASTCGI_PARAMS}:/etc/nginx/fastcgi_params
+      - ${NGINX_LOG_DIR}:/var/log/nginx
+    restart: always
     networks:
-      - local-network  # 设置对应的网络名称
+      - default
 
-  local-redis:
-    image: redis:6.2.5
-    container_name: local-redis
+  php82:
+    build:
+      context: ./services/php82
+      args:
+        DEBIAN_MIRROR_DOMAIN: deb.debian.org
+        PHP_EXTENSIONS: "$PHP82_EXTENSIONS"
+        TZ: "$TZ"
+    container_name: php82
+    expose:
+      - 9501
+    volumes:
+      - ${SOURCE_DIR}:/www/:rw
+      - ${PHP82_PHP_CONF_FILE}:/usr/local/etc/php/php.ini
+      - ${PHP82_FPM_CONF_FILE}:/usr/local/etc/php-fpm.d/www.conf
+      - ${PHP82_LOG_DIR}:/var/log/php
+      - ${PHP82_DATA_COMPOSER}:/tmp/composer
+    restart: always
+    cap_add:
+      - SYS_PTRACE
+    networks:
+      - default
+
+  mysql:
+    image: mysql:${MYSQL_VERSION}
+    container_name: mysql
     ports:
-      - "6379:6379"
-    environment:
-      - TZ=Asia/Shanghai
-    restart: always
-    privileged: true
+      - "${MYSQL_HOST_PORT}:3306"
     volumes:
-      - ./services/redis/redis.conf:/etc/redis/redis.conf
-      - ./data/redis:/data
-    entrypoint: ["redis-server", "/etc/redis/redis.conf"]
-    networks:
-      - local-network
+      - ${MYSQL_CONF_FILE}:/etc/mysql/conf.d/mysql.cnf:ro
+      - ${DATA_DIR}/mysql:/var/lib/mysql/:rw
+      - ${MYSQL_LOG_DIR}:/var/log/mysql/:rw
 
-  local-mysql:
-    image: mysql:5.7.28
-    container_name: local-mysql
+    restart: always
+    networks:
+      - default
+    environment:
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD}"
+      MYSQL_ROOT_HOST: "${MYSQL_ROOT_HOST}"
+      TZ: "$TZ"
+
+  redis:
+    image: redis:${REDIS_VERSION}
+    container_name: redis
     ports:
-      - "3306:3306"
-    environment:
-      - MYSQL_ROOT_PASSWORD=123456
-      - TZ=Asia/Shanghai
-    restart: always
-    privileged: true
+      - "${REDIS_HOST_PORT}:6379"
     volumes:
-      - ./services/mysql/mysql.cnf:/etc/mysql/conf.d/mysql.cnf
-      - ./data/mysql:/var/lib/mysql
-      - ./logs/mysql:/var/log/mysql/:rw
+      - ${REDIS_CONF_FILE}:/etc/redis.conf:ro
+      - ${DATA_DIR}/redis:/data/:rw
+    restart: always
+    entrypoint: ["redis-server", "/etc/redis.conf"]
+    environment:
+      TZ: "$TZ"
     networks:
-      - local-network
+      - default
 
-  local-php:
-    image: php:7.4-fpm
-    container_name: local-php
+  rabbitmq:
+    build:
+      context: ./services/rabbitmq
+      args:
+        RABBITMQ_VERSION: ${RABBITMQ_VERSION}
+        RABBITMQ_PLUGINS: ${RABBITMQ_PLUGINS}
+    container_name: rabbitmq
     restart: always
-    environment:
-      - TZ=Asia/Shanghai
-    volumes:
-      - ./www:/var/www/html
-      - ./services/php/php.ini:/usr/local/etc/php/php.ini
-      - ./services/php/www.conf:/usr/local/etc/php-fpm.d/www.conf
-      - ./logs/php:/var/log/php
-    networks:
-      - local-network
-
-#  local-mysql8:
-#    image: mysql:8.0.34
-#    container_name: local-mysql8
-#    ports:
-#      - "3305:3306"
-#    environment:
-#      - MYSQL_ROOT_PASSWORD=123456
-#      - TZ=Asia/Shanghai
-#    restart: always
-#    privileged: true
-#    volumes:
-#      - ./services/mysql8/mysql.cnf:/etc/mysql/conf.d/mysql.cnf
-#      - ./data/mysql8:/var/lib/mysql
-#      - ./logs/mysql8:/var/log/mysql/:rw
-#    networks:
-#      - local-network
-
-  local-mongo:
-    image: mongo:4.0
-    container_name: local-mongo
-    restart: always
-    environment:
-      - MONGO_INITDB_ROOT_USERNAME=jiang
-      - MONGO_INITDB_ROOT_PASSWORD=tvKLG7UpegqKNsB3
-      - MONGO_INITDB_DATABASE=admin
-      - TZ=Asia/Shanghai
-    volumes:
-      - ./data/mongo:/data/db
     ports:
-      - "27017:27017"
-    networks:
-      - local-network
-
-  local-rabbitmq:
-    image: rabbitmq:management
-    container_name: local-rabbitmq
-    restart: always
+      - "${RABBITMQ_HOST_PORT_C}:5672"
+      - "${RABBITMQ_HOST_PORT_S}:15672"
     environment:
-      - RABBITMQ_DEFAULT_USER=jiang
-      - RABBITMQ_DEFAULT_PASS=jiang816
-      - TZ=Asia/Shanghai
+       TZ: "$TZ"
+       RABBITMQ_DEFAULT_USER: "${RABBITMQ_DEFAULT_USER}"
+       RABBITMQ_DEFAULT_PASS: "${RABBITMQ_DEFAULT_PASS}"
+    networks:
+          - default
+
+  mongodb:
+    image: mongo:${MONGODB_VERSION}
+    container_name: mongodb
+    environment:
+        MONGO_INITDB_ROOT_USERNAME: "${MONGODB_INITDB_ROOT_USERNAME}"
+        MONGO_INITDB_ROOT_PASSWORD: "${MONGODB_INITDB_ROOT_PASSWORD}"
+        TZ: "$TZ"
+    volumes:
+      - ${DATA_DIR}/mongo:/data/db:rw
+      - ${DATA_DIR}/mongo_key:/mongo:rw
     ports:
-      - "5672:5672"
-      - "15672:15672"
+       - "${MONGODB_HOST_PORT}:27017"
     networks:
-      - local-network
+       - default
+    command:
+       --auth
 
-  local-elasticsearch:
-    image: elasticsearch:7.1.1
-    container_name: local-elasticsearch
+  elasticsearch:
+    build:
+      context: ./services/elasticsearch
+      args:
+        ELASTICSEARCH_VERSION: ${ELASTICSEARCH_VERSION}
+        ELASTICSEARCH_PLUGINS: ${ELASTICSEARCH_PLUGINS}
+    container_name: elasticsearch
     environment:
-      - ES_JAVA_OPTS=-Xms64m -Xmx251m
+      - TZ=$TZ
       - discovery.type=single-node
-    ports:
-      - "9200:9200"
-      - "9300:9300"
-    restart: always
-    privileged: true
-    networks:
-      - local-network
-
-  local-logstash:
-    image: logstash:7.1.1
-    container_name: local-logstash
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
     volumes:
+      - ${DATA_DIR}/esdata:/usr/share/elasticsearch/data
+      - ${ELASTICSEARCH_CONF_FILE}:/usr/share/elasticsearch/config/elasticsearch.yml
+      - ${ELASTICSEARCH_JVM_CONF_FILE}:/usr/share/elasticsearch/config/jvm.options
+      - ${ELASTICSEARCH_LOG4J2_CONF_FILE}:/usr/share/elasticsearch/config/log4j2.properties
+    hostname: elasticsearch
+    restart: always
+    ports:
+      - "${ELASTICSEARCH_HOST_PORT_C}:9200"
+      - "${ELASTICSEARCH_HOST_PORT_S}:9300"
+
+  kibana:
+    image: kibana:${KIBANA_VERSION}
+    container_name: kibana
+    environment:
+      TZ: "$TZ"
+      elasticsearch.hosts: http://elasticsearch:9200
+      I18N_LOCALE: "${KIBANA_I18N_LOCALE}"
+    hostname: kibana
+    depends_on:
+      - elasticsearch
+    restart: always
+    ports:
+      - "${KIBANA_HOST}:5601"
+
+  logstash:
+    image: logstash:${LOGSTASH_VERSION}
+    container_name: logstash
+    hostname: logstash
+    restart: always
+    depends_on:
+      - elasticsearch
+    environment:
+      TZ: "$TZ"
+    ports:
+      - "${LOGSTASH_HOST_PORT_C}:9600"
+      - "${LOGSTASH_HOST_PORT_S}:5044"
+    volumes:
+      # 挂载配置文件和JDBC驱动
       - ./services/logstash/logstash.yml:/usr/share/logstash/config/logstash.yml
       - ./services/logstash/conf.d/:/usr/share/logstash/conf.d/
       - ./services/logstash/mysql-connector-j-8.0.31.jar:/usr/share/logstash/logstash-core/lib/jars/mysql-connector-j-8.0.31.jar
-    environment:
-      - LOGSTASH_JAVA_OPTS=-Xms256m -Xmx256m
-      - TZ=Asia/Shanghai
-    ports:
-      - "5044:5044"
-    depends_on:
-      - local-elasticsearch
-    restart: always
-    privileged: true
-    networks:
-      - local-network
-
-  local-kafka:
-    image: wurstmeister/kafka:latest
-    container_name: local-kafka
-    restart: always
-    environment:
-      - KAFKA_LISTENERS=PLAINTEXT://0.0.0.0:9092
-      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://local-kafka:9092
-      - KAFKA_ZOOKEEPER_CONNECT=local-zookeeper:2181
-      - TZ=Asia/Shanghai
-    ports:
-      - "9092:9092"
-    networks:
-      - local-network
-
-  local-zookeeper:
-    image: wurstmeister/zookeeper:latest
-    container_name: local-zookeeper
-    restart: always
-    environment:
-      - TZ=Asia/Shanghai
-    ports:
-      - "2181:2181"
-    networks:
-      - local-network
-
-  local-postgres:
-    image: postgres:14  # 使用最新版本的PostgreSQL镜像
-    container_name: local-postgres
-    ports:
-      - "5432:5432"  # 将宿主机的5432端口映射到容器的5432端口
-    environment:
-      - POSTGRES_DB=pg_jiang  # 初始化数据库名
-      - POSTGRES_USER=root  # 初始化用户名
-      - POSTGRES_PASSWORD=jiang816  # 初始化用户密码
-      - TZ=Asia/Shanghai  # 设置时区
-    restart: always  # 开启自动重启
-    volumes:
-      - ./data/postgres:/var/lib/postgresql/data  # 数据持久化
-      - ./logs/postgres:/var/log/postgresql  # 日志目录
-    networks:
-      - local-network  # 使用已定义的网络
 
 networks:
-  local-network:  # 定义网络名称，可以自定义
-    driver: bridge  # 使用 bridge 网络驱动程序
+  default:
+    driver: bridge
+    ipam:
+      driver: default
+      # 解除下面的注释可以设置网段，用于nginx等容器固定容器IP
+      #config:
+      #  - subnet: 10.0.0.0/24
